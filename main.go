@@ -93,6 +93,9 @@ func main() {
 	http.HandleFunc("/", home)
 	http.HandleFunc("/user/login", userLogin)
 
+	// 设置静态文件路径
+	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
+
 	// 注册前端页面
 	registerView()
 

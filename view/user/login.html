@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/assets/js/vue-2-7-16.js"></script>
+    <script src="/assets/js/axios-1-9-0.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -74,7 +74,7 @@
         <div class="form-group">
             <button @click="login">Login</button>
         </div>
-        <div class="error" v-if="errorMessage">{{"{{"}} errorMessage {{"}}"}}</div>
+        <div class="error" v-if="errorMessage">errorMessage</div>
     </div>
 
     <script>
