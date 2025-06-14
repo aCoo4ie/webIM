@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/http"
 	"text/template"
+	"webIM/internal/models"
+	"webIM/internal/pkg"
+	"webIM/internal/service"
 )
 
 // 定义公共的返回结构体
@@ -34,14 +37,20 @@ func userLogin(w http.ResponseWriter, r *http.Request) {
 	// 获取路径参数
 	r.ParseForm()
 	mobile := r.PostForm.Get("mobile")
-	token := r.PostForm.Get("token")
+	password := r.PostForm.Get("password")
 
-	// 校验
-	if mobile != "19912345678" || token != "test" {
-		// 失败
+	// 构造登录参数
+	loginReq := models.UserLogin{
+		Mobile:   mobile,
+		PlainPwd: password,
+	}
+	// 调用 service 中的登录
+	userService := service.UserService{}
+	user, err := userService.Login(loginReq)
+	if err != nil {
 		ret := Resp{
 			Code: -1,
-			Msg:  "Error",
+			Msg:  err.Error(),
 			Data: nil,
 		}
 		RespWithMsg(w, ret)
@@ -53,7 +62,56 @@ func userLogin(w http.ResponseWriter, r *http.Request) {
 		Code: 0,
 		Msg:  "Success",
 		Data: UserData{
-			ID:    1234,
+			ID:    int(user.ID),
+			Token: "test",
+		},
+	}
+	RespWithMsg(w, ret)
+}
+
+func userRegister(w http.ResponseWriter, r *http.Request) {
+	var registerReq models.UserRegister
+
+	// 优先解析 JSON
+	if r.Header.Get("Content-Type") == "application/json" || r.Header.Get("Content-Type") == "application/json; charset=utf-8" {
+		err := json.NewDecoder(r.Body).Decode(&registerReq)
+		if err != nil {
+			ret := Resp{
+				Code: -1,
+				Msg:  "参数解析失败",
+				Data: nil,
+			}
+			RespWithMsg(w, ret)
+			return
+		}
+	} else {
+		// 路径参数
+		r.ParseForm()
+		registerReq.Mobile = r.PostForm.Get("mobile")
+		registerReq.PlainPwd = r.PostForm.Get("plainPwd")
+		registerReq.RePwd = r.PostForm.Get("rePwd")
+		registerReq.Nickname = r.PostForm.Get("nickname")
+		registerReq.Avatar = r.PostForm.Get("avatar")
+		registerReq.Sex = r.PostForm.Get("sex")
+	}
+
+	userService := service.UserService{}
+	user, err := userService.Register(&registerReq)
+	if err != nil {
+		ret := Resp{
+			Code: -1,
+			Msg:  err.Error(),
+			Data: nil,
+		}
+		RespWithMsg(w, ret)
+		return
+	}
+
+	ret := Resp{
+		Code: 0,
+		Msg:  "Success",
+		Data: UserData{
+			ID:    int(user.ID),
 			Token: "test",
 		},
 	}
@@ -90,8 +148,11 @@ func registerView() {
 }
 
 func main() {
+	pkg.InitMysql()
+
 	http.HandleFunc("/", home)
 	http.HandleFunc("/user/login", userLogin)
+	http.HandleFunc("/user/register", userRegister)
 
 	// 设置静态文件路径
 	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))

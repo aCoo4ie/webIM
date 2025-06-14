@@ -35,7 +35,7 @@
             display: block;
             margin-bottom: 5px;
         }
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 8px;
             box-sizing: border-box;
@@ -64,16 +64,33 @@
     <div id="app" class="login-container">
         <h2>Register</h2>
         <div class="form-group">
-            <label for="username">Username</label>
-            <input type="text" id="username" v-model="username" placeholder="Enter your username">
+            <label for="mobile">Mobile</label>
+            <input type="text" id="mobile" v-model="mobile" placeholder="Enter your mobile">
         </div>
         <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" v-model="password" placeholder="Enter your password">
+            <label for="nickname">Nickname</label>
+            <input type="text" id="nickname" v-model="nickname" placeholder="Enter your nickname">
         </div>
         <div class="form-group">
-            <label for="confirmPassword">Confirm Password</label>
-            <input type="password" id="confirmPassword" v-model="confirmPassword" placeholder="Confirm your password">
+            <label for="avatar">Avatar</label>
+            <input type="text" id="avatar" v-model="avatar" placeholder="Avatar URL (optional)">
+        </div>
+        <div class="form-group">
+            <label for="sex">Sex</label>
+            <select id="sex" v-model="sex">
+                <option value="">请选择</option>
+                <option value="男">男</option>
+                <option value="女">女</option>
+                <option value="未知">未知</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="plainPwd">Password</label>
+            <input type="password" id="plainPwd" v-model="plainPwd" placeholder="Enter your password">
+        </div>
+        <div class="form-group">
+            <label for="rePwd">Confirm Password</label>
+            <input type="password" id="rePwd" v-model="rePwd" placeholder="Confirm your password">
         </div>
         <div class="form-group">
             <button @click="register">Register</button>
@@ -85,29 +102,40 @@
         new Vue({
             el: '#app',
             data: {
-                username: '',
-                password: '',
-                confirmPassword: '',
+                mobile: '',
+                nickname: '',
+                avatar: '',
+                sex: '',
+                plainPwd: '',
+                rePwd: '',
                 errorMessage: ''
             },
             methods: {
                 register() {
-                    if (!this.username || !this.password || !this.confirmPassword) {
-                        this.errorMessage = 'Please fill in all fields.';
+                    if (!this.mobile || !this.plainPwd || !this.rePwd) {
+                        this.errorMessage = 'Please fill in required fields.';
                         return;
                     }
-                    if (this.password !== this.confirmPassword) {
+                    if (this.plainPwd !== this.rePwd) {
                         this.errorMessage = 'Passwords do not match.';
                         return;
                     }
                     this.errorMessage = '';
                     axios.post('/user/register', {
-                        username: this.username,
-                        password: this.password
+                        mobile: this.mobile,
+                        plainPwd: this.plainPwd,
+                        rePwd: this.rePwd,
+                        nickname: this.nickname,
+                        avatar: this.avatar,
+                        sex: this.sex
                     })
                     .then(response => {
-                        alert('Registration successful!');
-                        window.location.href = '/user/login.shtml';
+                        if (response.data && response.data.code === 0) {
+                            alert('Registration successful!');
+                            window.location.href = '/user/login.shtml';
+                        } else {
+                            this.errorMessage = response.data.msg || 'Registration failed.';
+                        }
                     })
                     .catch(error => {
                         this.errorMessage = 'Registration failed.';
