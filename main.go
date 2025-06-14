@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"text/template"
 )
 
 // 定义公共的返回结构体
@@ -68,9 +69,32 @@ func home(w http.ResponseWriter, r *http.Request) {
 	RespWithMsg(w, ret)
 }
 
+func registerView() {
+	// 获取 view 路径下的所有模版html
+	ts, err := template.ParseGlob("view/**/*")
+	if err != nil {
+		log.Fatalln(err)
+		return
+	}
+	for _, t := range ts.Templates() {
+		tn := t.Name()
+		// 注册模版html为对应的请求地址
+		http.HandleFunc("/"+tn, func(w http.ResponseWriter, r *http.Request) {
+			err = ts.ExecuteTemplate(w, tn, nil)
+			if err != nil {
+				log.Fatalln(err)
+			}
+		})
+	}
+
+}
+
 func main() {
 	http.HandleFunc("/", home)
 	http.HandleFunc("/user/login", userLogin)
+
+	// 注册前端页面
+	registerView()
 
 	// 启动服务器
 	http.ListenAndServe(":9090", nil)
