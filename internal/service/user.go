@@ -20,6 +20,7 @@ var (
 	ErrMobileExists    = errors.New("手机号已注册")
 	ErrMobileNotExists = errors.New("手机号未注册")
 	ErrWrongPwd        = errors.New("密码错误")
+	ErrDBUpdate        = errors.New("数据库更新错误")
 )
 
 func (s *UserService) Register(r *models.UserRegister) (*models.User, error) {
@@ -49,6 +50,8 @@ func (s *UserService) Register(r *models.UserRegister) (*models.User, error) {
 	u.Mobile = r.Mobile
 	u.Nickname = r.Nickname
 	u.Sex = r.Sex
+	u.Username = "user_" + r.Mobile // 新增：用手机号拼接用户名，保证不为空且唯一
+	u.Salt = r.Nickname             // 新增：添加用户的salt
 	u.CreatedAt = time.Now()
 	// 加密明文密码
 	salt := fmt.Sprintf("%d", rand.Int31n(10000))
@@ -63,7 +66,7 @@ func (s *UserService) Register(r *models.UserRegister) (*models.User, error) {
 
 }
 
-func (s *UserService) Login(l models.UserLogin) (*models.User, error) {
+func (s *UserService) Login(l *models.UserLogin) (*models.User, error) {
 	if pkg.MysqlEngine == nil {
 		return nil, errors.New("数据库未初始化")
 	}
@@ -78,9 +81,16 @@ func (s *UserService) Login(l models.UserLogin) (*models.User, error) {
 		return nil, ErrMobileNotExists
 	}
 	// 密码是否正确
-	pwd := utils.HashPassword(l.PlainPwd, u.Salt)
-	if pwd != u.Password {
+	if !utils.ValidatePassword(l.PlainPwd, u.Salt, u.Password) {
 		return nil, ErrWrongPwd
+	}
+	// 刷新 token，以当前时间通过 md5 加密作为 token
+	timeStr := fmt.Sprintf("%d", time.Now().UnixMicro())
+	u.Token = utils.HashToken(timeStr)
+	// 写入数据库中
+	_, err = pkg.MysqlEngine.ID(u.ID).Cols("token").Update(&u)
+	if err != nil {
+		return nil, ErrDBUpdate
 	}
 	return &u, nil
 }

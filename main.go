@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"text/template"
@@ -34,38 +35,50 @@ func RespWithMsg(w http.ResponseWriter, r Resp) {
 }
 
 func userLogin(w http.ResponseWriter, r *http.Request) {
-	// 获取路径参数
-	r.ParseForm()
-	mobile := r.PostForm.Get("mobile")
-	password := r.PostForm.Get("password")
+	var loginReq models.UserLogin
 
-	// 构造登录参数
-	loginReq := models.UserLogin{
-		Mobile:   mobile,
-		PlainPwd: password,
+	// 优先解析 JSON
+	if r.Header.Get("Content-Type") == "application/json" || r.Header.Get("Content-Type") == "application/json; charset=utf-8" {
+		err := json.NewDecoder(r.Body).Decode(&loginReq)
+		if err != nil {
+			ret := Resp{
+				Code: -1,
+				Msg:  "参数解析失败",
+				Data: nil,
+			}
+			RespWithMsg(w, ret)
+			return
+		}
+	} else {
+		// 再解析 url 参数
+		r.ParseForm()
+		loginReq.Mobile = r.PostForm.Get("mobile")
+		loginReq.PlainPwd = r.PostForm.Get("password")
 	}
-	// 调用 service 中的登录
+
 	userService := service.UserService{}
-	user, err := userService.Login(loginReq)
+	fmt.Println(loginReq)
+	user, err := userService.Login(&loginReq)
 	if err != nil {
 		ret := Resp{
 			Code: -1,
 			Msg:  err.Error(),
 			Data: nil,
 		}
+		fmt.Println(ret)
 		RespWithMsg(w, ret)
 		return
 	}
 
-	// 成功
 	ret := Resp{
 		Code: 0,
 		Msg:  "Success",
 		Data: UserData{
 			ID:    int(user.ID),
-			Token: "test",
+			Token: user.Token,
 		},
 	}
+	fmt.Println(ret)
 	RespWithMsg(w, ret)
 }
 

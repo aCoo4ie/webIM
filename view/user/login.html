@@ -94,12 +94,17 @@
                     this.errorMessage = '';
                     axios.post('/user/login', {
                         mobile: this.mobile,
-                        password: this.password
+                        plainPwd: this.password
                     })
                     .then(response => {
-                        alert('Login successful!');
-                        // Redirect or handle success
-                        window.location.href = '/';
+                        console.log(response.data);
+                        if (response.data.code === 0) {
+                            const data = response.data.data || {};
+                            const url = "?id=" + data.id + "&token=" + data.token;
+                            window.location.href = "/" + url;
+                        } else {
+                            this.errorMessage = response.data.msg || 'Login failed.';
+                        }
                     })
                     .catch(error => {
                         this.errorMessage = 'Invalid mobile or password.';

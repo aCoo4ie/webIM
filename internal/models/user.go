@@ -38,5 +38,5 @@ type UserRegister struct {
 
 type UserLogin struct {
 	Mobile   string `json:"mobile"`
-	PlainPwd string `json:"plainPwd"`
+	PlainPwd string `json:"plainPwd"` // 也可以加上: `json:"plainPwd,password"`
 }

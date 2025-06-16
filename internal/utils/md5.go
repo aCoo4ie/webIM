@@ -20,3 +20,9 @@ func HashPassword(password, salt string) string {
 func ValidatePassword(plainPassword, salt, hashedPassword string) bool {
 	return hashedPassword == HashPassword(plainPassword, salt)
 }
+
+func HashToken(s string) string {
+	h := md5.New()
+	h.Write([]byte(s))
+	return hex.EncodeToString(h.Sum(nil))
+}
